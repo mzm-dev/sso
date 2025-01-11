@@ -1,0 +1,29 @@
+{
+    "name": "mzm/sso",
+    "description": "Laravel package for SSO integration with sso",
+    "type": "library",
+    "license": "MIT",
+    "version": "0.0.1",
+    "authors": [
+        {
+            "name": "Mohamad Zaki Mustafa",
+            "email": "mzm@ns.gov.my"
+        }
+    ],
+    "require": {
+        "php": ">=8.0",
+        "illuminate/support": ">=9.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Mzm\\Sso\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Mzm\\Sso\\Providers\\SsoServiceProvider"
+            ]
+        }
+    }
+}
