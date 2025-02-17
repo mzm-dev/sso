@@ -5,8 +5,9 @@ return [
     'base_home' => env('SSO_BASE_HOME', null), // 'home'
     'client_origin' => env('SSO_ORIGIN', ''),
     'client_token' => env('SSO_TOKEN', ''),
-    'api_url' => 'https://sso.ns.test',
+    'api_url' => env('SSO_BASE_URL', ''),
     'api_path' => '/api/user',
+    'verify_curl' => env('VERIFY_SSO', true),
     'guard' => 'web',
     'cache_key' => 'sso_token',
     'user_model' => \App\Models\User::class,

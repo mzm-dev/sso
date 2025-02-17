@@ -15,6 +15,7 @@ trait SsoService
     protected $clientOrigin;
     protected $clientToken;
     protected $baseHome;
+    protected $verifyCurl;
 
     protected $userModel;
     protected $authFields;
@@ -40,6 +41,7 @@ trait SsoService
         $this->clientOrigin = config('sso.client_origin');
         $this->clientToken = config('sso.client_token');
         $this->baseHome = config('sso.base_home');
+        $this->verifyCurl = config('sso.base_home');
 
         $this->userModel = config('sso.user_model');
 

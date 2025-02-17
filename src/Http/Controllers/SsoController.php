@@ -23,7 +23,6 @@ class SsoController extends Controller
             }
 
             return response()->json(auth()->user());
-
         }
 
         if (!$this->token) {
@@ -33,19 +32,20 @@ class SsoController extends Controller
         // Semak token dengan SSO
         $response = Http::withToken($this->token)
             ->withOptions([
-                'verify' => false, // Disable SSL verification
+                'verify' => $this->verifyCurl, // Disable SSL verification
             ])
             ->withHeaders([
                 'X-Client-Origin' => "$this->clientOrigin", // Additional headers
                 'X-Client-Token' => "$this->clientToken"
-            ])->get($this->apiUrl .$this->apiPath);
+            ])->get($this->apiUrl . $this->apiPath);
 
         if ($response->failed()) {
             Log::error('SSO authentication failed', [
                 'status' => $response->status(),
                 'body' => $response->body(),
             ]);
-            return response()->json(['error' => 'Unauthorized'], 401);
+            return abort(401, 'Unauthorized');
+            //return response()->json(['error' => 'Unauthorized'], 401);
         }
 
         $ssoUserData = $response->json();
@@ -53,7 +53,9 @@ class SsoController extends Controller
         $user = $this->findOrCreateUser($ssoUserData['data']);
 
         if (!$user) {
-            return response()->json(['error' => 'User not found or inactive. Mohon hubungi admin'], 404);
+            Log::error('User not found or inactive. Mohon hubungi admin');
+            return abort(401, 'User not found or inactive. Mohon hubungi admin');
+            // return response()->json(['error' => 'User not found or inactive. Mohon hubungi admin'], 404);
         }
 
         // Check apakah pengguna telah masuk
