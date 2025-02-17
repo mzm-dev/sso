@@ -41,7 +41,7 @@ trait SsoService
         $this->clientOrigin = config('sso.client_origin');
         $this->clientToken = config('sso.client_token');
         $this->baseHome = config('sso.base_home');
-        $this->verifyCurl = config('sso.base_home');
+        $this->verifyCurl = config('sso.verify_curl');
 
         $this->userModel = config('sso.user_model');
 
@@ -81,14 +81,10 @@ trait SsoService
 
 
         if ($user)
-            Log::info('SSO user success', [
-                'user' => $user,
-                'user id' => $user->id
-            ]);
+            Log::info('SSO user success');
 
         if (!$user)
             Log::error('User not found or inactive');
-
         if (
             $user
             && $user->cretated_at == now()->day

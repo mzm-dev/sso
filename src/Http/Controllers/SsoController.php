@@ -26,6 +26,7 @@ class SsoController extends Controller
         }
 
         if (!$this->token) {
+            Log::error('Token ' . config('sso.cache_key') . ' not found ');
             return response()->json(['error' => 'Token ' . config('sso.cache_key') . ' not found '], 401);
         }
 
@@ -45,7 +46,6 @@ class SsoController extends Controller
                 'body' => $response->body(),
             ]);
             return abort(401, 'Unauthorized');
-            //return response()->json(['error' => 'Unauthorized'], 401);
         }
 
         $ssoUserData = $response->json();
@@ -54,8 +54,7 @@ class SsoController extends Controller
 
         if (!$user) {
             Log::error('User not found or inactive. Mohon hubungi admin');
-            return abort(401, 'User not found or inactive. Mohon hubungi admin');
-            // return response()->json(['error' => 'User not found or inactive. Mohon hubungi admin'], 404);
+            return abort(401, 'User not found or inactive. Please contact admin');
         }
 
         // Check apakah pengguna telah masuk
