@@ -71,7 +71,7 @@ trait SsoService
             $query->where($this->statusField, $this->activeValue);
         }
 
-        $user = $query->firstOr(function () use ($ssoUser) {
+        $user = $query->firstOrCreate(function () use ($ssoUser) {
             return $this->userModel::create([   // Create user with these attributes if not found
                 'name' => $ssoUser['name'], // Default name
                 'email' => $ssoUser['email'], // Default email
