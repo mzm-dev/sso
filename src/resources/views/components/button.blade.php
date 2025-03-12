@@ -5,7 +5,7 @@
         background-color: white;
         color: #0d3b66;
         border: 1px solid #0d3b66;
-        padding: 10px 20px;
+        padding: 6px 20px;
         border-radius: 8px;
         font-family: Arial, sans-serif;
         font-size: 16px;
