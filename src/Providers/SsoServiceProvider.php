@@ -3,6 +3,7 @@
 namespace Mzm\Sso\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Blade;
 
 class SsoServiceProvider extends ServiceProvider
 {
@@ -21,6 +22,9 @@ class SsoServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__ . '/../Config/sso.php' => config_path('sso.php'),
         ], 'sso-config');
+
+        // Daftarkan Blade component
+        Blade::componentNamespace('Mzm\\Sso\\View\\Components', 'sso');
 
         // Publish the views
         $this->loadViewsFrom(__DIR__ . '/../resources/views', 'sso');
