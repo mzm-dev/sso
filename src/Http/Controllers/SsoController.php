@@ -27,7 +27,7 @@ class SsoController extends Controller
 
         if (!$this->token) {
             Log::error('Token ' . config('sso.cache_key') . ' not found ');
-            return redirect()->away($this->apiUrl.'?token='.urlencode($this->token));
+            return redirect()->away($this->apiUrl.'/login?token='.urlencode($this->token));
             //return response()->json(['error' => 'Token ' . config('sso.cache_key') . ' not found '], 401);
         }
 
