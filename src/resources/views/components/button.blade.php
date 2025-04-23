@@ -4,14 +4,15 @@
         align-items: center;
         background-color: white;
         color: #0d3b66;
-        border: 1px solid #0d3b66;
-        padding: 6px 20px;
+        border: none;
+        padding: 10px 20px;
         border-radius: 8px;
+        border: 1px rgba(13, 59, 102, 0.3) solid;
         font-family: Arial, sans-serif;
         font-size: 16px;
         font-weight: bold;
         cursor: pointer;
-        box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+        box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.2);
         transition: background-color 0.3s, color 0.3s;
     }
 
@@ -26,7 +27,7 @@
     .sso-text {
         display: flex;
         flex-direction: column;
-        text-align: center;
+        text-align: left;
     }
 
     .sso-text span {
@@ -44,8 +45,27 @@
     .sso-button:hover svg {
         fill: white;
     }
+
+    .sso-button.btn-icon {
+        padding: 8px;
+        border-radius: 25%;
+        width: 54px;
+        height: 54px;
+        justify-content: center;
+    }
+
+    .sso-button.btn-icon .sso-text {
+        display: none;
+    }
+
+    .sso-button.btn-icon svg {
+        margin: 0;
+        width: 32px;
+        height: 32px;
+    }
 </style>
-<button class="sso-button" type="button" onclick="window.location.href='{{ route('sso.auth') }}'">
+<button class="sso-button btn-icon" title="Sistem iLogin (SSO)" type="button"
+    onclick="window.location.href='{{ route('sso.auth') }}'">>
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-shield-lock-fill"
         viewBox="0 0 16 16">
         <path fill-rule="evenodd"
