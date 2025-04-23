@@ -5,6 +5,7 @@
         background-color: white;
         color: #0d3b66;
         border: none;
+        margin-top: 1em;
         padding: 10px 20px;
         border-radius: 8px;
         border: 1px rgba(13, 59, 102, 0.3) solid;
@@ -28,6 +29,7 @@
         display: flex;
         flex-direction: column;
         text-align: left;
+        line-height: 1.2;
     }
 
     .sso-text span {
@@ -64,9 +66,11 @@
         height: 32px;
     }
 </style>
-<button
-    class="{{ $attributes->class(['sso-button']) }}"
-    title="Sistem iLogin (SSO)" type="button"
+@php
+    $hasIconOnly = str_contains($attributes->get('class'), 'btn-icon');
+    $baseClass = 'sso-button' . ($hasIconOnly ? ' btn-icon' : '');
+@endphp
+<button {{ $attributes->merge(['class' => $baseClass]) }} title="Sistem iLogin (SSO)" type="button"
     onclick="window.location.href='{{ route('sso.auth') }}'">
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-shield-lock-fill"
         viewBox="0 0 16 16">
