@@ -14,7 +14,7 @@ class SsoServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__ . '/../Config/sso.php', 'sso');
 
         // Merge log config supaya tersedia sebagai 'logging.channels.sso_log'
-        $this->mergeConfigFrom(__DIR__ . '/../config/sso_log.php', 'logging.channels.sso_log');
+        $this->mergeConfigFrom(__DIR__ . '/../Config/sso_log.php', 'logging.channels.sso_log');
     }
 
     public function boot()
