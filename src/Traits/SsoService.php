@@ -81,10 +81,10 @@ trait SsoService
 
 
         if ($user)
-            Log::info('SSO user success');
+            Log::channel('sso_log')->info('SSO user success');
 
         if (!$user)
-            Log::error('User not found or inactive');
+            Log::channel('sso_log')->error('User not found or inactive');
         if (
             $user
             && $user->cretated_at == now()->day

@@ -18,7 +18,7 @@ class SsoController extends Controller
 
             // check check Redirect ke halaman utama
             if ($this->baseHome) {
-                Log::info('auth check Redirect to ' . $this->baseHome);
+                Log::channel('sso_log')->info('auth check Redirect to ' . $this->baseHome);
                 return redirect()->route($this->baseHome);
             }
 
@@ -26,7 +26,7 @@ class SsoController extends Controller
         }
 
         if (!$this->token) {
-            Log::error('Token ' . config('sso.cache_key') . ' not found ');
+            Log::channel('sso_log')->error('Token ' . config('sso.cache_key') . ' not found ');
             return redirect()->away($this->apiUrl.'/login?token='.urlencode($this->clientToken));
             //return response()->json(['error' => 'Token ' . config('sso.cache_key') . ' not found '], 401);
         }
@@ -42,7 +42,7 @@ class SsoController extends Controller
             ])->get($this->apiUrl . $this->apiPath);
 
         if ($response->failed() || !$response->json()) {
-            Log::error('SSO authentication failed', [
+            Log::channel('sso_log')->error('SSO authentication failed', [
                 'status' => $response->status(),
                 'body' => $response->body(),
             ]);
@@ -55,7 +55,7 @@ class SsoController extends Controller
         $user = $this->findOrCreateUser($ssoUserData['data']);
 
         if (!$user) {
-            Log::error('User not found or inactive. Mohon hubungi admin');
+            Log::channel('sso_log')->error('User not found or inactive. Mohon hubungi admin');
             return abort(404, 'User not found or inactive. Please contact admin');
         }
 
@@ -64,10 +64,10 @@ class SsoController extends Controller
 
         // Redirect ke halaman utama
         if ($this->baseHome) {
-            Log::info('Redirect to ' . $this->baseHome);
+            Log::channel('sso_log')->info('Redirect to ' . $this->baseHome);
             return redirect()->route($this->baseHome);
         }
-        Log::error($this->baseHome . ' not found');
+        Log::channel('sso_log')->error($this->baseHome . ' not found');
         return abort(404, 'Base Home not found. Please contact admin');
         // return response()->json(auth()->user());
     }
