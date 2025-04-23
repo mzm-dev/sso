@@ -27,7 +27,8 @@ class SsoController extends Controller
 
         if (!$this->token) {
             Log::error('Token ' . config('sso.cache_key') . ' not found ');
-            return response()->json(['error' => 'Token ' . config('sso.cache_key') . ' not found '], 401);
+            return redirect()->away($this->apiUrl.'?token='.urlencode($this->token));
+            //return response()->json(['error' => 'Token ' . config('sso.cache_key') . ' not found '], 401);
         }
 
         // Semak token dengan SSO
@@ -40,7 +41,7 @@ class SsoController extends Controller
                 'X-Client-Token' => "$this->clientToken"
             ])->get($this->apiUrl . $this->apiPath);
 
-        if ($response->failed()) {
+        if ($response->failed() || !$response->json()) {
             Log::error('SSO authentication failed', [
                 'status' => $response->status(),
                 'body' => $response->body(),
@@ -48,13 +49,14 @@ class SsoController extends Controller
             return abort(401, 'Unauthorized');
         }
 
+
         $ssoUserData = $response->json();
 
         $user = $this->findOrCreateUser($ssoUserData['data']);
 
         if (!$user) {
             Log::error('User not found or inactive. Mohon hubungi admin');
-            return abort(401, 'User not found or inactive. Please contact admin');
+            return abort(404, 'User not found or inactive. Please contact admin');
         }
 
         // Check apakah pengguna telah masuk
@@ -65,7 +67,8 @@ class SsoController extends Controller
             Log::info('Redirect to ' . $this->baseHome);
             return redirect()->route($this->baseHome);
         }
-
-        return response()->json(auth()->user());
+        Log::error($this->baseHome . ' not found');
+        return abort(404, 'Base Home not found. Please contact admin');
+        // return response()->json(auth()->user());
     }
 }
