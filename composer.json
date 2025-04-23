@@ -3,7 +3,7 @@
     "description": "Laravel package for SSO integration between apps clients",
     "type": "library",
     "license": "MIT",
-    "version": "1.0.11",
+    "version": "1.0.12",
     "authors": [
         {
             "name": "Mohamad Zaki",
