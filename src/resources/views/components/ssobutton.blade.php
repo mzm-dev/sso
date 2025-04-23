@@ -65,7 +65,7 @@
     }
 </style>
 <button class="sso-button btn-icon" title="Sistem iLogin (SSO)" type="button"
-    onclick="window.location.href='{{ route('sso.auth') }}'">>
+    onclick="window.location.href='{{ route('sso.auth') }}'">
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-shield-lock-fill"
         viewBox="0 0 16 16">
         <path fill-rule="evenodd"
