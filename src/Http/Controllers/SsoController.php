@@ -46,7 +46,9 @@ class SsoController extends Controller
                 'status' => $response->status(),
                 'body' => $response->body(),
             ]);
-            return abort(401, 'Unauthorized');
+            // return abort(401, 'Unauthorized');
+            Log::channel('sso_log')->error('401 Unauthorized');
+            return redirect()->away($this->apiUrl.'/login?token='.urlencode($this->clientToken));
         }
 
 
