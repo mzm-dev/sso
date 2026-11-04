@@ -3,6 +3,7 @@
 namespace Mzm\Sso\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -32,14 +33,20 @@ class SsoController extends Controller
         }
 
         // Semak token dengan SSO
-        $response = Http::withToken($this->token)
-            ->withOptions([
-                'verify' => $this->verifyCurl, // Disable SSL verification
-            ])
-            ->withHeaders([
-                'X-Client-Origin' => "$this->clientOrigin", // Additional headers
-                'X-Client-Token' => "$this->clientToken"
-            ])->get($this->apiUrl . $this->apiPath);
+        try {
+            $response = Http::withToken($this->token)
+                ->withOptions([
+                    'verify' => $this->verifyCurl,
+                ])
+                ->withHeaders([
+                    'X-Client-Origin' => "$this->clientOrigin", // Additional headers
+                    'X-Client-Token' => "$this->clientToken"
+                ])->get($this->apiUrl . $this->apiPath);
+        } catch (ConnectionException $e) {
+            // Termasuk kegagalan pengesahan sijil TLS
+            Log::channel('sso_log')->error('SSO connection failed: ' . $e->getMessage());
+            return abort(503, 'Tidak dapat menghubungi Sistem iLogin.');
+        }
 
         if ($response->failed() || !$response->json()) {
             Log::channel('sso_log')->error('SSO authentication failed', [
@@ -54,9 +61,15 @@ class SsoController extends Controller
 
         $ssoUserData = $response->json();
 
-        $user = $this->findOrCreateUser($ssoUserData['data']);
+        $user = $this->findUser($ssoUserData['data']);
 
-        if (!$user) {
+        // Pendaftaran pengguna diuruskan oleh sistem klien
+        if (!$user && $this->registrationRoute) {
+            Log::channel('sso_log')->info('User not found. Redirect to ' . $this->registrationRoute);
+            return redirect()->route($this->registrationRoute);
+        }
+
+        if (!$user || !$this->isActive($user)) {
             Log::channel('sso_log')->error('User not found or inactive. Mohon hubungi admin');
             return abort(404, 'User not found or inactive. Please contact admin');
         }

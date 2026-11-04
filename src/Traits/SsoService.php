@@ -15,13 +15,13 @@ trait SsoService
     protected $clientOrigin;
     protected $clientToken;
     protected $baseHome;
+    protected $registrationRoute;
     protected $verifyCurl;
 
     protected $userModel;
     protected $authFields;
     protected $statusField;
     protected $activeValue;
-    protected $roles;
     protected $guard;
 
     public function __construct()
@@ -41,6 +41,7 @@ trait SsoService
         $this->clientOrigin = config('sso.client_origin');
         $this->clientToken = config('sso.client_token');
         $this->baseHome = config('sso.base_home');
+        $this->registrationRoute = config('sso.registration_route');
         $this->verifyCurl = config('sso.verify_curl');
 
         $this->userModel = config('sso.user_model');
@@ -50,50 +51,27 @@ trait SsoService
 
         $this->statusField = config('sso.status_field');
         $this->activeValue = config('sso.active_value');
-        $this->roles = config('sso.roles');
         $this->guard = config('sso.guard') ?? 'web';
     }
 
-    public function findOrCreateUser($ssoUser)
+    public function findUser($ssoUser)
     {
-
         $query = $this->userModel::query();
 
         foreach ($this->authFields as $field) {
-            if (isset($ssoUser[$field]) == false) {
-                return response()->json(['error' => "Field {$field} not found in SSO response"], 422);
+            if (blank($ssoUser[$field] ?? null)) {
+                Log::channel('sso_log')->error("Field {$field} not found in SSO response");
+                abort(422, "Field {$field} not found in SSO response");
             }
             $query->where($field, $ssoUser[$field]);
         }
 
-        // Tambah semakan status jika diperlukan
-        if ($this->statusField) {
-            $query->where($this->statusField, $this->activeValue);
-        }
+        return $query->first();
+    }
 
-        $user = $query->firstOr(function () use ($ssoUser) {
-            return $this->userModel::create([   // Create user with these attributes if not found
-                'name' => $ssoUser['name'], // Default name
-                'email' => $ssoUser['email'], // Default email
-                'password' => bcrypt(explode('@', $ssoUser['email'])[0]), // Default password
-            ]);
-        });
-
-
-        if ($user)
-            Log::channel('sso_log')->info('SSO user success');
-
-        if (!$user)
-            Log::channel('sso_log')->error('User not found or inactive');
-        if (
-            $user
-            && $user->cretated_at == now()->day
-            && isset($this->roles)
-        ) {
-            $user->syncRoles($this->roles);
-        }
-
-        return $user;
+    public function isActive($user)
+    {
+        return !$this->statusField || $user->{$this->statusField} == $this->activeValue;
     }
 
     public function loginUsingUserId($userid)
