@@ -4,8 +4,8 @@ Single Sign On client package for Laravel project
 
 ### Requirements
 
-- Laravel 8+
-- PHP 9.x
+- Laravel 9+
+- PHP 8.2+
 - Composer version 2
 
 ### How it works?
@@ -41,9 +41,12 @@ SSO_BASE_HOME=home
 SSO_REGISTRATION_ROUTE=
 SSO_ORIGIN=https://your-client-domain
 SSO_TOKEN=
+SSO_SECRET=
 SSO_BASE_URL=https://ilogin.ns.gov.my
 VERIFY_SSO=true
 ```
+
+`SSO_TOKEN` and `SSO_SECRET` are issued by the iLogin administrator (`php artisan sso:rahsia {system}` on iLogin). The system's callback in iLogin must be `https://your-client-domain/sso/verify`.
 
 Button
 
@@ -56,6 +59,26 @@ Button
 This package only logs in users that already exist in your application. It does not create accounts or assign roles.
 
 Set `SSO_REGISTRATION_ROUTE` to the name of a route in your application to handle registration. That route must be accessible to guests. No user data is passed to it. Without this setting, the user receives a 404.
+
+### Upgrading to 3.0.0 (code flow)
+
+Version 3 signs users in with a one-time code instead of reading the `access_token` cookie that iLogin shares across the parent domain:
+
+1. `/sso/verify` sends the user to iLogin with a random `state` kept in your session.
+2. iLogin returns to `/sso/verify?code=...&state=...` after login and 2FA.
+3. Your server checks the `state` and exchanges the code at `POST /api/sso/token` with `SSO_TOKEN` and `SSO_SECRET`. The response contains the user's data.
+
+To switch:
+
+- Ask the iLogin administrator for `SSO_SECRET` and add it to `.env`. Keep it on the server only.
+- Run `php artisan config:clear` (or `config:cache`).
+
+Without `SSO_SECRET`, version 3 keeps using the cookie flow, so you can update the package first and add the secret later. The cookie flow will be switched off on iLogin once every system has moved.
+
+Other changes:
+
+- The session ID is regenerated after an SSO login.
+- When iLogin denies access to the system (403), the user sees a 403 page instead of being sent back to iLogin in a loop.
 
 ### Upgrading to 2.0.0
 

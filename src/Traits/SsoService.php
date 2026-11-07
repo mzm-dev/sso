@@ -14,6 +14,8 @@ trait SsoService
     protected $apiPath;
     protected $clientOrigin;
     protected $clientToken;
+    protected $clientSecret;
+    protected $tokenPath;
     protected $baseHome;
     protected $registrationRoute;
     protected $verifyCurl;
@@ -40,6 +42,8 @@ trait SsoService
         $this->apiPath = config('sso.api_path');
         $this->clientOrigin = config('sso.client_origin');
         $this->clientToken = config('sso.client_token');
+        $this->clientSecret = config('sso.client_secret');
+        $this->tokenPath = config('sso.token_path') ?: '/api/sso/token';
         $this->baseHome = config('sso.base_home');
         $this->registrationRoute = config('sso.registration_route');
         $this->verifyCurl = config('sso.verify_curl');
