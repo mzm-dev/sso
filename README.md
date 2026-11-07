@@ -1,105 +1,147 @@
-# Project Title
+# mzm/sso
 
-Single Sign On client package for Laravel project
+iLogin single sign-on client for Laravel applications. For PHP applications without a framework, use [`mzm/ssophp`](https://github.com/mzm-dev/ssophp).
 
 ### Requirements
 
-- Laravel 9+
 - PHP 8.2+
-- Composer version 2
+- Laravel 9+
+- Composer 2
+- A system registered in iLogin, with its `SSO_TOKEN` and `SSO_SECRET`
 
-### How it works?
+### How it works
 
-User visits Agencies System and unique token is generated. When new token is generated we need to attach User session to his session in Agencies System so he will be redirected to Server and back to Agencies Syste at this moment new session in Server will be created and associated with User session in Agencies System's page. When User visits other System cross Agencies same steps will be done except that when User will be redirected to Server he already use his old session and same session id which associated with Token#1.
+1. The user clicks the iLogin button. `/sso/verify` sends the user to iLogin with a random `state` kept in your session.
+2. The user logs in and passes 2FA on iLogin. iLogin checks that the user may use your system.
+3. iLogin returns to `/sso/verify?code=...&state=...`.
+4. Your server checks the `state` and exchanges the code at `POST /api/sso/token` using `SSO_TOKEN` and `SSO_SECRET`. The response contains the user's data.
+5. The package finds the matching user in your database and logs them in.
 
-# Installation
+The code works once and expires after 60 seconds. `SSO_SECRET` never leaves your server.
 
-### Server
-
-Install this package using composer.
+## Installation
 
 ```shell
-$ composer require mzm/sso
+composer require mzm/sso:^3.0
 ```
 
-Copy config file to Laravel project `config/` folder.
+Publish the config and views:
 
 ```shell
-$ php artisan vendor:publish --tag=sso-config
+php artisan vendor:publish --tag=sso-config
+php artisan vendor:publish --tag=sso-views
 ```
 
-Copy views file to Laravel project `resources/views/` folder.
+Create the log folder:
 
 ```shell
-$ php artisan vendor:publish --tag=sso-views
+mkdir -p storage/logs/sso
+chmod -R 775 storage/logs/sso
+chown -R www-data:www-data storage/logs/sso
 ```
 
-Options in your `.env` file:
+### Registering your system in iLogin
+
+Ask the iLogin administrator to:
+
+- register your system with your domain and the callback `https://your-system.example/sso/verify`;
+- generate the client secret, either from the system page in iLogin or with `php artisan sso:rahsia {system}`.
+
+You receive `SSO_TOKEN` and `SSO_SECRET`. The secret is shown once only. If it is lost, ask for a new one; the old one then stops working.
+
+### Configuration
+
+Add to `.env`:
 
 ```shell
-SSO_BASE_HOME=home
-SSO_REGISTRATION_ROUTE=
-SSO_ORIGIN=https://your-client-domain
+SSO_BASE_URL=https://your-ilogin-server
+SSO_ORIGIN=https://your-system.example
 SSO_TOKEN=
 SSO_SECRET=
-SSO_BASE_URL=https://ilogin.ns.gov.my
+SSO_BASE_HOME=home
+SSO_REGISTRATION_ROUTE=
 VERIFY_SSO=true
 ```
 
-`SSO_TOKEN` and `SSO_SECRET` are issued by the iLogin administrator (`php artisan sso:rahsia {system}` on iLogin). The system's callback in iLogin must be `https://your-client-domain/sso/verify`.
+| Env | Description |
+| --- | --- |
+| `SSO_BASE_URL` | iLogin URL, without a trailing slash. Required. |
+| `SSO_ORIGIN` | Your system's URL, exactly as registered in iLogin. |
+| `SSO_TOKEN` | Your system's client ID in iLogin. Required. |
+| `SSO_SECRET` | Your system's client secret. When empty, the legacy cookie flow is used. |
+| `SSO_BASE_HOME` | Route name to send the user to after login. |
+| `SSO_REGISTRATION_ROUTE` | Route name for users who do not exist in your application (see below). |
+| `VERIFY_SSO` | Verify iLogin's TLS certificate. Keep `true` in production. |
 
-Button
+Options in `config/sso.php`:
 
-```shell
+| Key | Default | Description |
+| --- | --- | --- |
+| `user_model` | `App\Models\User` | Model used to find the user |
+| `auth_fields` | `email` | Comma-separated fields matched against iLogin's data, for example `email,nokp` |
+| `status_field`, `active_value` | `null` | When set, only users whose field equals the value can log in |
+| `guard` | `web` | Auth guard used to log in |
+
+Run `php artisan config:clear` (or `config:cache`) after changing these values.
+
+### Login button
+
+```blade
 <x-sso::ssobutton />
 ```
+
+### User data from iLogin
+
+| Key | Description |
+| --- | --- |
+| `name` | Full name |
+| `email` | Email address |
+| `nokp` | Identity card number |
+| `no_tel_pejabat`, `no_tel_bimbit` | Phone numbers |
+| `jabatan_id`, `jabatan_nama` | Department |
+| `jawatan_id`, `jawatan_nama` | Position |
+| `gred`, `kod_perkhidmatan` | Grade and service code |
 
 ### Users that do not exist
 
 This package only logs in users that already exist in your application. It does not create accounts or assign roles.
 
-Set `SSO_REGISTRATION_ROUTE` to the name of a route in your application to handle registration. That route must be accessible to guests. No user data is passed to it. Without this setting, the user receives a 404.
+Set `SSO_REGISTRATION_ROUTE` to the name of a route in your application that handles registration. That route must be accessible to guests. No user data is passed to it. Without this setting, the user receives a 404.
 
-### Upgrading to 3.0.0 (code flow)
+### Errors
 
-Version 3 signs users in with a one-time code instead of reading the `access_token` cookie that iLogin shares across the parent domain:
+| Status | Cause |
+| --- | --- |
+| 403 | iLogin says the user has no access to your system |
+| 404 | The user does not exist in your application (and no registration route is set), or is inactive |
+| 422 | A field in `auth_fields` is missing from iLogin's data |
+| 500 | `SSO_BASE_URL`, `SSO_TOKEN` or `SSO_SECRET` is missing or wrong |
+| 502 | Login failed three times in a row |
+| 503 | iLogin cannot be reached, or its TLS certificate is not trusted |
 
-1. `/sso/verify` sends the user to iLogin with a random `state` kept in your session.
-2. iLogin returns to `/sso/verify?code=...&state=...` after login and 2FA.
-3. Your server checks the `state` and exchanges the code at `POST /api/sso/token` with `SSO_TOKEN` and `SSO_SECRET`. The response contains the user's data.
+Details are logged in `storage/logs/sso/`.
 
-To switch:
+## Upgrading
 
-- Ask the iLogin administrator for `SSO_SECRET` and add it to `.env`. Keep it on the server only.
-- Run `php artisan config:clear` (or `config:cache`).
+### To 3.0.0 (code flow)
 
-Without `SSO_SECRET`, version 3 keeps using the cookie flow, so you can update the package first and add the secret later. The cookie flow will be switched off on iLogin once every system has moved.
+Version 3 signs users in with a one-time code instead of reading the `access_token` cookie that iLogin shared across the parent domain.
+
+1. Make sure your server runs PHP 8.2 or later.
+2. Run `composer require mzm/sso:^3.0`.
+3. Add `SSO_SECRET` to `.env` and set `SSO_BASE_URL` explicitly. Version 3 has no default iLogin URL.
+4. Run `php artisan config:clear`.
+
+Without `SSO_SECRET`, version 3 keeps using the cookie flow, so you can update the package first and add the secret later. iLogin will switch the cookie flow off once every system has moved.
 
 Other changes:
 
 - The session ID is regenerated after an SSO login.
-- When iLogin denies access to the system (403), the user sees a 403 page instead of being sent back to iLogin in a loop.
+- When iLogin denies access (403), the user sees a 403 page instead of being sent back to iLogin in a loop.
 
-### Upgrading to 2.0.0
+### To 2.0.0
 
 - Accounts are no longer created automatically and the `roles` option is removed. Add a registration route if you relied on automatic creation.
-- TLS certificates are now verified by default. If you published `config/sso.php` before 2.0.0, it still defaults to `false`: set `VERIFY_SSO=true` in `.env` or publish the config again. If the iLogin certificate is not trusted by your server, requests fail with 503 until its chain is fixed.
+- TLS certificates are verified by default. If you published `config/sso.php` before 2.0.0, it still defaults to `false`: set `VERIFY_SSO=true` in `.env` or publish the config again.
 - Accounts created automatically by earlier versions have a password equal to the part of the email before `@`. Reset these passwords if your application has its own password login.
 - When `status_field` is set, inactive users receive a 404. Remove any duplicate accounts created by earlier versions.
-- An SSO response without a required field now returns 422, and an unreachable iLogin returns 503, instead of 500.
-
-### SSO Logged
-
-Permission Folder
-
-```shell
-mkdir -p storage/logs/sso
-```
-
-
-permission & owner
-
-```shell
-chmod -R 775 storage/logs/sso
-chown -R www-data:www-data storage/logs/sso
-```

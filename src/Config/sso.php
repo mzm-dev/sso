@@ -8,7 +8,7 @@ return [
     'client_token' => env('SSO_TOKEN', ''),
     // Rahsia sistem (php artisan sso:rahsia di iLogin). Jika diisi, aliran kod digunakan; jika kosong, aliran cookie lama.
     'client_secret' => env('SSO_SECRET', ''),
-    'api_url' => env('SSO_BASE_URL', 'https://ilogin.ns.gov.my'),
+    'api_url' => rtrim((string) env('SSO_BASE_URL', ''), '/'), // URL iLogin, wajib,
     'api_path' => '/api/user',
     'token_path' => '/api/sso/token',
     'verify_curl' => env('VERIFY_SSO', true),

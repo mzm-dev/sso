@@ -23,6 +23,12 @@ class SsoController extends Controller
             return $this->keHalamanUtama('auth check');
         }
 
+        if (blank($this->apiUrl) || blank($this->clientToken)) {
+            Log::channel('sso_log')->error('SSO_BASE_URL atau SSO_TOKEN tidak ditetapkan');
+
+            return abort(500, 'Konfigurasi SSO tidak lengkap. Sila hubungi pentadbir sistem.');
+        }
+
         // Aliran kod (disyorkan): aktif apabila SSO_SECRET ditetapkan.
         if ($this->clientSecret) {
             return $request->filled('code') ? $this->terimaKod($request) : $this->keIlogin($request);
