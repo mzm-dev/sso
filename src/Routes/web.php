@@ -7,6 +7,8 @@ use Mzm\Sso\Http\Controllers\SsoController;
 
 Route::middleware('web')->group(function () {
     Route::get('sso/auth', function () {
+        SsoController::pastikanAktif();
+
         return view('sso::auth');
     })->name('sso.auth');
 

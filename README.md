@@ -61,6 +61,7 @@ SSO_SECRET=
 SSO_BASE_HOME=home
 SSO_REGISTRATION_ROUTE=
 VERIFY_SSO=true
+SSO_ENABLE=true
 ```
 
 | Env | Description |
@@ -72,6 +73,7 @@ VERIFY_SSO=true
 | `SSO_BASE_HOME` | Route name to send the user to after login. |
 | `SSO_REGISTRATION_ROUTE` | Route name for users who do not exist in your application (see below). |
 | `VERIFY_SSO` | Verify iLogin's TLS certificate. Keep `true` in production. |
+| `SSO_ENABLE` | `true` by default. Set to `false` while iLogin is under maintenance (see below). |
 
 Options in `config/sso.php`:
 
@@ -89,6 +91,18 @@ Run `php artisan config:clear` (or `config:cache`) after changing these values.
 ```blade
 <x-sso::ssobutton />
 ```
+
+### Turning SSO off during iLogin maintenance
+
+Set `SSO_ENABLE=false` in `.env` and run `php artisan config:clear` (or `config:cache`). While it is off:
+
+- `<x-sso::ssobutton />` is shown disabled, with the text "Dalam penyelenggaraan".
+- `sso/auth` and `sso/verify` return 503, so bookmarked links and callbacks do not reach iLogin.
+- Users who are already logged in are not affected.
+
+If your application also has its own password login, users can keep using it. Set `SSO_ENABLE=true` (or remove it) to turn SSO back on.
+
+If you published `config/sso.php` before 3.1.0, change its `enable` line to `'enable' => (bool) env('SSO_ENABLE', true),`. Otherwise `SSO_ENABLE` has no effect.
 
 ### User data from iLogin
 
@@ -117,11 +131,15 @@ Set `SSO_REGISTRATION_ROUTE` to the name of a route in your application that han
 | 422 | A field in `auth_fields` is missing from iLogin's data |
 | 500 | `SSO_BASE_URL`, `SSO_TOKEN` or `SSO_SECRET` is missing or wrong |
 | 502 | Login failed three times in a row |
-| 503 | iLogin cannot be reached, or its TLS certificate is not trusted |
+| 503 | iLogin cannot be reached, its TLS certificate is not trusted, or `SSO_ENABLE=false` |
 
 Details are logged in `storage/logs/sso/`.
 
 ## Upgrading
+
+### To 3.1.0
+
+Adds `SSO_ENABLE`. No action is needed: SSO stays on by default. If you published `config/sso.php`, update its `enable` line as described in [Turning SSO off during iLogin maintenance](#turning-sso-off-during-ilogin-maintenance).
 
 ### To 3.0.0 (code flow)
 

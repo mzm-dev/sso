@@ -17,11 +17,25 @@ class SsoController extends Controller
     /** Kunci session untuk state aliran kod. */
     public const SESSION_STATE = 'sso_state';
 
+    /** Hentikan permintaan dengan 503 jika SSO dimatikan (SSO_ENABLE=false). */
+    public static function pastikanAktif(): void
+    {
+        if (config('sso.enable', true)) {
+            return;
+        }
+
+        Log::channel('sso_log')->warning('Log masuk SSO disekat kerana SSO_ENABLE=false.');
+
+        abort(503, 'Log masuk melalui Sistem iLogin ditutup sementara untuk penyelenggaraan. Sila cuba lagi kemudian.');
+    }
+
     public function __invoke(Request $request)
     {
         if (auth()->guard($this->guard)->check()) {
             return $this->keHalamanUtama('auth check');
         }
+
+        static::pastikanAktif();
 
         if (blank($this->apiUrl) || blank($this->clientToken)) {
             Log::channel('sso_log')->error('SSO_BASE_URL atau SSO_TOKEN tidak ditetapkan');

@@ -39,13 +39,19 @@
         opacity: 0.8;
     }
 
-    .sso-button:hover {
+    .sso-button:not(:disabled):hover {
         background-color: #0d3b66;
         color: white;
     }
 
-    .sso-button:hover svg {
+    .sso-button:not(:disabled):hover svg {
         fill: white;
+    }
+
+    .sso-button:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+        box-shadow: none;
     }
 
     .sso-button.btn-icon {
@@ -69,9 +75,15 @@
 @php
     $hasIconOnly = str_contains($attributes->get('class'), 'btn-icon');
     $baseClass = 'sso-button' . ($hasIconOnly ? ' btn-icon' : '');
+    $ssoAktif = (bool) config('sso.enable', true);
 @endphp
+@if ($ssoAktif)
 <button {{ $attributes->merge(['class' => $baseClass]) }} title="Sistem iLogin (SSO)" type="button"
     onclick="window.location.href='{{ route('sso.auth') }}'">
+@else
+<button {{ $attributes->merge(['class' => $baseClass]) }} title="Sistem iLogin sedang diselenggara" type="button"
+    disabled aria-disabled="true">
+@endif
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-shield-lock-fill"
         viewBox="0 0 16 16">
         <path fill-rule="evenodd"
@@ -79,6 +91,6 @@
     </svg>
     <div class="sso-text">
         Sistem iLogin
-        <span>Single sign-on (SSO)</span>
+        <span>{{ $ssoAktif ? 'Single sign-on (SSO)' : 'Dalam penyelenggaraan' }}</span>
     </div>
 </button>
