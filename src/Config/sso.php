@@ -15,8 +15,36 @@ return [
     'verify_curl' => env('VERIFY_SSO', true),
     'guard' => 'web',
     'cache_key' => 'sso_token',
-    'user_model' => \App\Models\User::class,
-    'auth_fields' => "email", // Contoh: "email,nokp"
-    'status_field' => null, //'is_active'
-    'active_value' => null, // Nilai yang dianggap "aktif".
+    'user_model' => env('SSO_USER_MODEL', \App\Models\User::class),
+    'auth_fields' => env('SSO_AUTH_FIELDS', 'email'), // Contoh: "email,nokp"
+
+    /*
+     * Carian pengguna mengikut sistem anda menyimpan No. KP atau e-mel.
+     * Jika diisi, menggantikan user_model dan auth_fields di atas.
+     * Setiap baris disemak mengikut turutan sehingga pengguna pertama dijumpai.
+     *
+     *  model      Model Eloquent yang menyimpan nilai tersebut
+     *  credential Nama kolum dalam model itu (cth. no_kp, no_kad_pengenalan, email)
+     *  field      Kunci data iLogin yang dipadankan: 'nokp' (lalai) atau 'email'
+     *  relation   Relation belongsTo(User) pada model itu; null jika model itu sendiri ialah User
+     *
+     * No. KP dipadankan dalam kedua-dua format, 900101011234 dan 900101-01-1234.
+     */
+    'user_providers' => [
+        // [
+        //     'model' => \App\Models\User::class,
+        //     'credential' => 'no_kp',
+        //     'field' => 'nokp',
+        //     'relation' => null,
+        // ],
+        // [
+        //     'model' => \App\Models\StaffProfile::class,
+        //     'credential' => 'no_kad_pengenalan',
+        //     'field' => 'nokp',
+        //     'relation' => 'user',
+        // ],
+    ],
+
+    'status_field' => env('SSO_STATUS_FIELD'), // cth. 'is_active'
+    'active_value' => env('SSO_ACTIVE_VALUE'), // Nilai yang dianggap "aktif".
 ];

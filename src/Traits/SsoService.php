@@ -60,6 +60,12 @@ trait SsoService
 
     public function findUser($ssoUser)
     {
+        $providers = config('sso.user_providers');
+
+        if (is_array($providers) && $providers !== []) {
+            return $this->findUserFromProviders($providers, (array) $ssoUser);
+        }
+
         $query = $this->userModel::query();
 
         foreach ($this->authFields as $field) {
@@ -71,6 +77,78 @@ trait SsoService
         }
 
         return $query->first();
+    }
+
+    /**
+     * Semak setiap baris user_providers mengikut turutan dan pulangkan User pertama yang dijumpai.
+     */
+    protected function findUserFromProviders(array $providers, array $ssoUser)
+    {
+        foreach (array_values($providers) as $i => $provider) {
+            $model = $provider['model'] ?? null;
+            $column = $provider['credential'] ?? null;
+            $field = $provider['field'] ?? 'nokp';
+            $relation = $provider['relation'] ?? null;
+
+            if (! is_string($model) || ! class_exists($model) || blank($column)) {
+                Log::channel('sso_log')->error("sso.user_providers[{$i}] tidak sah: 'model' mesti kelas yang wujud dan 'credential' mesti diisi.");
+                abort(500, 'Konfigurasi SSO tidak lengkap. Sila hubungi pentadbir sistem.');
+            }
+
+            $nilai = $this->nilaiCarian($field, $ssoUser[$field] ?? null);
+
+            // Tanpa nilai, carian menjadi "IS NULL" dan boleh memadankan pengguna lain.
+            if ($nilai === []) {
+                Log::channel('sso_log')->warning("Field {$field} tiada dalam data iLogin. sso.user_providers[{$i}] dilangkau.");
+
+                continue;
+            }
+
+            $rekod = $model::query()->whereIn($column, $nilai)->first();
+
+            if (! $rekod) {
+                continue;
+            }
+
+            $user = $relation ? $rekod->{$relation} : $rekod;
+
+            if ($user) {
+                Log::channel('sso_log')->info("Pengguna dijumpai melalui {$model}.{$column}");
+
+                return $user;
+            }
+
+            Log::channel('sso_log')->warning("Rekod {$model} dijumpai tetapi relation '{$relation}' kosong.");
+        }
+
+        return null;
+    }
+
+    /**
+     * Nilai yang dicari dalam pangkalan data. No. KP dicari dalam format digit dan bersempang.
+     *
+     * @return list<string>
+     */
+    protected function nilaiCarian(string $field, $nilai): array
+    {
+        if (! is_scalar($nilai) || trim((string) $nilai) === '') {
+            return [];
+        }
+
+        $nilai = trim((string) $nilai);
+
+        if ($field !== 'nokp') {
+            return [$nilai];
+        }
+
+        $digit = preg_replace('/\D/', '', $nilai);
+        $calon = [$nilai, $digit];
+
+        if (strlen($digit) === 12) {
+            $calon[] = substr($digit, 0, 6) . '-' . substr($digit, 6, 2) . '-' . substr($digit, 8);
+        }
+
+        return array_values(array_unique(array_filter($calon, fn ($v) => $v !== '')));
     }
 
     public function isActive($user)

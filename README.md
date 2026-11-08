@@ -73,6 +73,9 @@ SSO_ENABLE=true
 | `SSO_BASE_HOME` | Route name to send the user to after login. |
 | `SSO_REGISTRATION_ROUTE` | Route name for users who do not exist in your application (see below). |
 | `VERIFY_SSO` | Verify iLogin's TLS certificate. Keep `true` in production. |
+| `SSO_USER_MODEL` | Model used to find the user. Default `App\Models\User`. |
+| `SSO_AUTH_FIELDS` | Comma-separated fields matched against iLogin's data. Default `email`. |
+| `SSO_STATUS_FIELD`, `SSO_ACTIVE_VALUE` | When set, only users whose field equals the value can log in. |
 | `SSO_ENABLE` | `true` by default. Set to `false` while iLogin is under maintenance (see below). |
 
 Options in `config/sso.php`:
@@ -81,10 +84,41 @@ Options in `config/sso.php`:
 | --- | --- | --- |
 | `user_model` | `App\Models\User` | Model used to find the user |
 | `auth_fields` | `email` | Comma-separated fields matched against iLogin's data, for example `email,nokp` |
+| `user_providers` | `[]` | Where your system stores the IC number or email (see below). Replaces `user_model` and `auth_fields` when set |
 | `status_field`, `active_value` | `null` | When set, only users whose field equals the value can log in |
 | `guard` | `web` | Auth guard used to log in |
 
 Run `php artisan config:clear` (or `config:cache`) after changing these values.
+
+### Finding users by IC number (`user_providers`)
+
+Use this when the IC number is not in a column the package expects, for example `no_kp` on `users`, or `no_kad_pengenalan` on a profile table that belongs to `User`. You set it in your own `config/sso.php`; the package code is not changed.
+
+```shell
+php artisan vendor:publish --tag=sso-config
+```
+
+```php
+'user_providers' => [
+    // 1. IC number on the users table
+    ['model' => \App\Models\User::class, 'credential' => 'no_kp', 'field' => 'nokp', 'relation' => null],
+
+    // 2. IC number on a profile table: StaffProfile belongsTo User through user()
+    ['model' => \App\Models\StaffProfile::class, 'credential' => 'no_kad_pengenalan', 'field' => 'nokp', 'relation' => 'user'],
+
+    // 3. Fall back to email
+    ['model' => \App\Models\User::class, 'credential' => 'email', 'field' => 'email', 'relation' => null],
+],
+```
+
+| Key | Description |
+| --- | --- |
+| `model` | Eloquent model that holds the value |
+| `credential` | Column in that model |
+| `field` | Key in iLogin's data to match: `nokp` (default) or `email` |
+| `relation` | `belongsTo(User)` relation on that model, or `null` when the model is `User` itself |
+
+Rows are checked in order and the first user found is logged in. IC numbers match whether your column stores `900101011234` or `900101-01-1234`. A row is skipped when iLogin sends no value for its `field`, so an empty value never matches.
 
 ### Login button
 
@@ -136,6 +170,10 @@ Set `SSO_REGISTRATION_ROUTE` to the name of a route in your application that han
 Details are logged in `storage/logs/sso/`.
 
 ## Upgrading
+
+### To 3.2.0
+
+Adds `user_providers` and the `SSO_USER_MODEL`, `SSO_AUTH_FIELDS`, `SSO_STATUS_FIELD` and `SSO_ACTIVE_VALUE` environment variables. No action is needed: without `user_providers`, users are found with `user_model` and `auth_fields` as before. A published `config/sso.php` keeps its own values; copy the new keys from the package config if you want to use them.
 
 ### To 3.1.0
 
