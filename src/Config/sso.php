@@ -1,7 +1,7 @@
 <?php
 
 return [
-    // false: butang SSO dimatikan dan laluan sso/* memulangkan 503 (cth. semasa penyelenggaraan iLogin)
+    // false: butang SSO tidak dipaparkan dan laluan sso/* memulangkan 503 (cth. semasa penyelenggaraan iLogin)
     'enable' => (bool) env('SSO_ENABLE', true),
     'base_home' => env('SSO_BASE_HOME', null), // 'home'
     'registration_route' => env('SSO_REGISTRATION_ROUTE', null), // Nama route klien untuk pengguna yang belum wujud

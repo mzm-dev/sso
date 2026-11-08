@@ -130,7 +130,7 @@ Rows are checked in order and the first user found is logged in. IC numbers matc
 
 Set `SSO_ENABLE=false` in `.env` and run `php artisan config:clear` (or `config:cache`). While it is off:
 
-- `<x-sso::ssobutton />` is shown disabled, with the text "Dalam penyelenggaraan".
+- `<x-sso::ssobutton />` is not shown. If SSO is the only way to log in to your application, add your own maintenance notice to the login page.
 - `sso/auth` and `sso/verify` return 503, so bookmarked links and callbacks do not reach iLogin.
 - Users who are already logged in are not affected.
 
@@ -170,6 +170,10 @@ Set `SSO_REGISTRATION_ROUTE` to the name of a route in your application that han
 Details are logged in `storage/logs/sso/`.
 
 ## Upgrading
+
+### To 3.3.0
+
+When `SSO_ENABLE=false`, `<x-sso::ssobutton />` is no longer shown. It used to be shown disabled with the text "Dalam penyelenggaraan". If you published the package views, run `php artisan vendor:publish --tag=sso-views --force`, or the old button stays.
 
 ### To 3.2.0
 

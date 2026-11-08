@@ -1,3 +1,5 @@
+{{-- Tiada apa-apa dipaparkan apabila SSO dimatikan (SSO_ENABLE=false). --}}
+@if (config('sso.enable', true))
 <style>
     .sso-button {
         display: flex;
@@ -75,15 +77,9 @@
 @php
     $hasIconOnly = str_contains($attributes->get('class'), 'btn-icon');
     $baseClass = 'sso-button' . ($hasIconOnly ? ' btn-icon' : '');
-    $ssoAktif = (bool) config('sso.enable', true);
 @endphp
-@if ($ssoAktif)
 <button {{ $attributes->merge(['class' => $baseClass]) }} title="Sistem iLogin (SSO)" type="button"
     onclick="window.location.href='{{ route('sso.auth') }}'">
-@else
-<button {{ $attributes->merge(['class' => $baseClass]) }} title="Sistem iLogin sedang diselenggara" type="button"
-    disabled aria-disabled="true">
-@endif
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-shield-lock-fill"
         viewBox="0 0 16 16">
         <path fill-rule="evenodd"
@@ -91,6 +87,7 @@
     </svg>
     <div class="sso-text">
         Sistem iLogin
-        <span>{{ $ssoAktif ? 'Single sign-on (SSO)' : 'Dalam penyelenggaraan' }}</span>
+        <span>Single sign-on (SSO)</span>
     </div>
 </button>
+@endif
